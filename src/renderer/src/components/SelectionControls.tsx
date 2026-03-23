@@ -1,4 +1,4 @@
-import { MdCheck, MdClose, MdDownload } from 'react-icons/md'
+import { MdCheck, MdClose, MdDownload, MdSettings } from 'react-icons/md'
 import type { ScreenshotAction } from '../../../shared/selection'
 import type { Point } from '../utils/position'
 
@@ -16,6 +16,18 @@ export function SelectionControls({ position, onSubmit, onCancel }: Props): Reac
       onMouseDown={(event) => event.stopPropagation()}
       onMouseUp={(event) => event.stopPropagation()}
     >
+      <button
+        type="button"
+        className="control-button control-button-secondary"
+        onClick={() => {
+          if (window.api?.openSettings) {
+            window.api.openSettings()
+          }
+        }}
+        title="设置"
+      >
+        <MdSettings size={18} />
+      </button>
       <button type="button" className="control-button control-button-secondary" onClick={onCancel}>
         <MdClose size={18} />
       </button>

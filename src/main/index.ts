@@ -12,13 +12,13 @@ import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 
 import { Screenshots } from './screenshots'
-import { getCaptureShortcut, parseSelectionSubmission } from '../shared/selection'
+import { parseSelectionSubmission } from '../shared/selection'
+import { settings } from './settings'
 
 let backgroundWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 
 const screenshots = new Screenshots()
-const captureShortcut = getCaptureShortcut(process.platform)
 
 function createBackgroundWindow(): void {
   if (backgroundWindow) {
@@ -41,6 +41,46 @@ function createBackgroundWindow(): void {
   backgroundWindow.loadURL('about:blank')
   backgroundWindow.on('closed', () => {
     backgroundWindow = null
+  })
+}
+
+let settingsWindow: BrowserWindow | null = null
+
+function createSettingsWindow(): void {
+  if (settingsWindow) {
+    settingsWindow.focus()
+    return
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 600,
+    height: 440,
+    show: false,
+    resizable: false,
+    title: '截图设置',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  // 隐藏菜单栏
+  settingsWindow.setMenuBarVisibility(false)
+
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    void settingsWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}/settings.html`)
+  } else {
+    void settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
+  }
+
+  settingsWindow.once('ready-to-show', () => {
+    settingsWindow?.show()
+  })
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null
   })
 }
 
@@ -153,12 +193,15 @@ async function handleSelectionSubmission(payload: unknown): Promise<void> {
 }
 
 function registerShortcuts(): void {
-  const registered = globalShortcut.register(captureShortcut, () => {
+  globalShortcut.unregisterAll()
+
+  const currentShortcut = settings.getShortcut()
+  const registered = globalShortcut.register(currentShortcut, () => {
     void openSelectionOverlay()
   })
 
   if (!registered) {
-    throw new Error(`Failed to register screenshot shortcut: ${captureShortcut}`)
+    console.error(`Failed to register screenshot shortcut: ${currentShortcut}`)
   }
 }
 
@@ -172,6 +215,20 @@ app.whenReady().then(() => {
 
   ipcMain.on('cancel-selection', () => {
     void closeOverlayWindow()
+  })
+
+  ipcMain.on('open-settings', () => {
+    createSettingsWindow()
+  })
+
+  ipcMain.handle('get-shortcut', () => {
+    return settings.getShortcut()
+  })
+
+  ipcMain.handle('set-shortcut', (_, shortcut: string) => {
+    settings.setShortcut(shortcut)
+    registerShortcuts() // 重新注册快捷键
+    return true
   })
 
   app.on('activate', () => {

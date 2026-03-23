@@ -73,11 +73,11 @@ export function getSelectionControlsState(input: {
 
 /**
  * 获取适用于当前操作系统的全局快捷键
- * - macOS: Option+Q
+ * - macOS: Ctrl+Option+Q
  * - Windows/Linux: Alt+Q
  */
 export function getCaptureShortcut(platform: NodeJS.Platform): string {
-  return platform === 'darwin' ? 'Option+Q' : 'Alt+Q'
+  return platform === 'darwin' ? 'Ctrl+Option+Q' : 'Alt+Q'
 }
 
 /**
