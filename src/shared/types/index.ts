@@ -1,0 +1,5 @@
+export const CTRL = 'Ctrl'
+export const OPTION = 'Option'
+export const SHIFT = 'Shift'
+export const COMMAND = 'Command'
+export const ALT = 'Alt'

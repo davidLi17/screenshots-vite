@@ -1,13 +1,27 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 import type { SelectionSubmission } from '../shared/selection'
+import { IPC_EVENTS } from '../shared/ipc-events'
 
 const api = {
-  submitSelection: (payload: SelectionSubmission) => ipcRenderer.send('submit-selection', payload),
-  cancelSelection: () => ipcRenderer.send('cancel-selection'),
-  getShortcut: () => ipcRenderer.invoke('get-shortcut'),
-  setShortcut: (shortcut: string) => ipcRenderer.invoke('set-shortcut', shortcut),
-  openSettings: () => ipcRenderer.send('open-settings')
+  submitSelection: (payload: SelectionSubmission) => {
+    ipcRenderer.send(IPC_EVENTS.SUBMIT_SELECTION, payload)
+  },
+  cancelSelection: () => {
+    ipcRenderer.send(IPC_EVENTS.CANCEL_SELECTION)
+  },
+  getShortcut: () => {
+    return ipcRenderer.invoke(IPC_EVENTS.GET_SHORTCUT)
+  },
+  setShortcut: (shortcut: string) => {
+    return ipcRenderer.invoke(IPC_EVENTS.SET_SHORTCUT, shortcut)
+  },
+  openSettings: () => {
+    ipcRenderer.send(IPC_EVENTS.OPEN_SETTINGS)
+  },
+  logToTerminal: (message: string) => {
+    ipcRenderer.send(IPC_EVENTS.LOG_TO_TERMINAL, message)
+  }
 }
 
 if (process.contextIsolated) {

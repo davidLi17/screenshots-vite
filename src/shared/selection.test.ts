@@ -9,6 +9,7 @@ import {
   parseSelectionSubmission,
   toScaledBounds
 } from './selection'
+import { ALT, CTRL, OPTION } from './types'
 
 test('normalizeSelectionBounds converts reverse drags into positive bounds', () => {
   const normalized = normalizeSelectionBounds({
@@ -37,13 +38,13 @@ test('normalizeSelectionBounds returns null for zero-sized selections', () => {
   assert.equal(normalized, null)
 })
 
-test('getCaptureShortcut uses Option+Q on macOS', () => {
-  assert.equal(getCaptureShortcut('darwin'), 'Option+Q')
+test(`getCaptureShortcut uses ${CTRL}+${OPTION}+D on macOS`, () => {
+  assert.equal(getCaptureShortcut('darwin'), `${CTRL}+${OPTION}+D`)
 })
 
-test('getCaptureShortcut uses Alt+Q on non-macOS platforms', () => {
-  assert.equal(getCaptureShortcut('win32'), 'Alt+Q')
-  assert.equal(getCaptureShortcut('linux'), 'Alt+Q')
+test(`getCaptureShortcut uses ${CTRL}+${ALT}+D on non-macOS platforms`, () => {
+  assert.equal(getCaptureShortcut('win32'), `${CTRL}+${ALT}+D`)
+  assert.equal(getCaptureShortcut('linux'), `${CTRL}+${ALT}+D`)
 })
 
 test('isScreenshotAction only accepts supported actions', () => {

@@ -6,6 +6,7 @@ export interface ScreenshotApi {
   getShortcut: () => Promise<string>
   setShortcut: (shortcut: string) => Promise<boolean>
   openSettings: () => void
+  logToTerminal: (message: string) => void
 }
 
 declare global {

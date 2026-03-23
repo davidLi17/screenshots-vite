@@ -13,6 +13,7 @@ import { is } from '@electron-toolkit/utils'
 
 import { Screenshots } from './screenshots'
 import { parseSelectionSubmission } from '../shared/selection'
+import { IPC_EVENTS } from '../shared/ipc-events'
 import { settings } from './settings'
 
 let backgroundWindow: BrowserWindow | null = null
@@ -95,7 +96,6 @@ function createOverlayWindow(): BrowserWindow {
     show: false,
     frame: false,
     transparent: true,
-    fullscreen: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     movable: false,
@@ -120,6 +120,10 @@ function createOverlayWindow(): BrowserWindow {
   }
 
   window.once('ready-to-show', () => {
+    // macOS 使用 simpleFullScreen 避免原生全屏动画（Space 切换黑屏）
+    if (process.platform === 'darwin') {
+      window.setSimpleFullScreen(true)
+    }
     window.show()
     window.focus()
   })
@@ -140,9 +144,10 @@ async function ensureScreenPermission(): Promise<boolean> {
 
   const status = systemPreferences.getMediaAccessStatus('screen')
   if (status === 'granted') {
+    console.log('已经获取了屏幕权限 in mac')
     return true
   }
-
+  // 如果没有，直接跳转到系统设置的“隐私与安全性”
   await shell.openExternal(
     'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenRecording'
   )
@@ -151,15 +156,15 @@ async function ensureScreenPermission(): Promise<boolean> {
 
 async function openSelectionOverlay(): Promise<void> {
   const hasPermission = await ensureScreenPermission()
+  console.log('🚀 ~ openSelectionOverlay ~ hasPermission:', hasPermission)
   if (!hasPermission) {
     return
   }
-
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.focus()
     return
   }
-
+  console.log(`[Screenshot] 准备创建全屏截图窗口...`)
   overlayWindow = createOverlayWindow()
 }
 
@@ -183,6 +188,11 @@ async function handleSelectionSubmission(payload: unknown): Promise<void> {
   if (!submission) {
     return
   }
+
+  const actionText = submission.action === 'download' ? '📥 下载图片' : '✅ 复制到剪贴板(完成)'
+  console.log(
+    `[Screenshot] 用户操作: ${actionText}, 选取坐标: x=${submission.bounds.x} y=${submission.bounds.y} 宽高: ${submission.bounds.width}x${submission.bounds.height}`
+  )
 
   try {
     await closeOverlayWindow()
@@ -209,23 +219,28 @@ app.whenReady().then(() => {
   createBackgroundWindow()
   registerShortcuts()
 
-  ipcMain.on('submit-selection', (_, payload) => {
+  ipcMain.on(IPC_EVENTS.SUBMIT_SELECTION, (_, payload) => {
     void handleSelectionSubmission(payload)
   })
 
-  ipcMain.on('cancel-selection', () => {
+  ipcMain.on(IPC_EVENTS.CANCEL_SELECTION, () => {
     void closeOverlayWindow()
   })
 
-  ipcMain.on('open-settings', () => {
+  ipcMain.on(IPC_EVENTS.OPEN_SETTINGS, () => {
     createSettingsWindow()
   })
 
-  ipcMain.handle('get-shortcut', () => {
+  // 接收来自渲染进程（前端）的日志，并打印到 Node.js 终端
+  ipcMain.on(IPC_EVENTS.LOG_TO_TERMINAL, (_, message: string) => {
+    console.log(`[Renderer] ${message}`)
+  })
+
+  ipcMain.handle(IPC_EVENTS.GET_SHORTCUT, () => {
     return settings.getShortcut()
   })
 
-  ipcMain.handle('set-shortcut', (_, shortcut: string) => {
+  ipcMain.handle(IPC_EVENTS.SET_SHORTCUT, (_, shortcut: string) => {
     settings.setShortcut(shortcut)
     registerShortcuts() // 重新注册快捷键
     return true

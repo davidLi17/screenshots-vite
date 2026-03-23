@@ -1,3 +1,5 @@
+import { ALT, CTRL, OPTION } from './types'
+
 /**
  * 截图区域的边界数据，基于逻辑像素
  */
@@ -73,11 +75,11 @@ export function getSelectionControlsState(input: {
 
 /**
  * 获取适用于当前操作系统的全局快捷键
- * - macOS: Ctrl+Option+Q
- * - Windows/Linux: Alt+Q
+ * - macOS: Ctrl+Option+D
+ * - Windows/Linux: Ctrl+Alt+D
  */
 export function getCaptureShortcut(platform: NodeJS.Platform): string {
-  return platform === 'darwin' ? 'Ctrl+Option+Q' : 'Alt+Q'
+  return platform === 'darwin' ? `${CTRL}+${OPTION}+D` : `${CTRL}+${ALT}+D`
 }
 
 /**

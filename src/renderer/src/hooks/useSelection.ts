@@ -32,6 +32,7 @@ export function useSelection(): {
   }
 
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>): void => {
+    window.api?.logToTerminal('[Screenshot] ✨ 用户开始拖拽区域进行截图...')
     const start = { x: event.clientX, y: event.clientY }
     setIsDrawing(true)
     setDragStart(start)
